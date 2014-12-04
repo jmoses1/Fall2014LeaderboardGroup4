@@ -45,7 +45,9 @@
 <bbNG:pageHeader>
 	<bbNG:pageTitleBar title="Leaderboard Configuration"></bbNG:pageTitleBar>
 </bbNG:pageHeader>
-
+<bbNG:form ACTION="formAction.jsp" name="dateRangePicker" METHOD="POST">
+<bbUI:dateRangePicker formName="dateRangePicker" startDateField="start" endDateField="end"/>
+</bbNG:form>
 <!-- Body Content: Plotbands & Color Picker -->
 <bbNG:form action="leaderboard_save.jsp" method="post" name="plotband_config_form" id="plotband_config_form" onSubmit="return validateForm()">
 	<bbNG:dataCollection>
@@ -155,7 +157,7 @@
 						for(int i = 0; i < visibleArr.length; i++){//Add any saved visible to left side.
 							MultiSelectBean leftBean = new MultiSelectBean();
 							leftBean.setValue(visibleArr[i]);
-							leftBean.setLabel(visibleArr[i]);
+							leftBean.setLabel(visibleArr[i].replaceAll("; ",", "));
 							leftList.add(leftBean);
 						}
 					}
@@ -165,51 +167,98 @@
 						for(int i = 0; i < hiddenArr.length; i++){//Add any saved hidden to right side.
 							MultiSelectBean rightBean = new MultiSelectBean();
 							rightBean.setValue(hiddenArr[i]);
-							rightBean.setLabel(hiddenArr[i]);
+							rightBean.setLabel(hiddenArr[i].replaceAll("; ",", "));
 							rightList.add(rightBean);
 						}
 					}
+					java.util.Collections.sort(leftList);
+					java.util.Collections.sort(rightList);
 					/*
 					If the cmlist (entire course roster) is larger than both the hidden and visible lists, then
 					a student must be missing from the lists. So this checks if any new student has been added
 					to the course roster since Leaderboard has been uploaded.
 					*/
-					//if(cmlist.size() > (visibleList.length() + hiddenList.length())){
-						for(int i = 0; i < cmlist.size(); i++){//Check entire roster.
-							User student = cmlist.get(i).getUser();
-							String stuName = student.getGivenName() + " " + student.getFamilyName() + ": " + student.getUserName();
-							boolean found = false;
-							for(int j = 0; j < visibleArr.length; j++){//Check visible list
-								if(stuName.equals(visibleArr[j])){
+					for(int i = 0; i < cmlist.size(); i++){//Check entire roster.
+						User student = cmlist.get(i).getUser();
+						String stuName = student.getFamilyName() + "; " + student.getGivenName() + " (" + student.getUserName() + ")";
+						boolean found = false;
+						for(int j = 0; j < visibleArr.length; j++){//Check visible list
+							if(stuName.equals(visibleArr[j])){
+								found = true;
+								break;
+							}
+						}
+						if(found == false){
+							for(int j = 0; j < hiddenArr.length; j++){//Check hidden list
+								if(stuName.equals(hiddenArr[j])){
 									found = true;
 									break;
 								}
 							}
-							if(found == false){
-								for(int j = 0; j < hiddenArr.length; j++){//Check hidden list
-									if(stuName.equals(hiddenArr[j])){
-										found = true;
-										break;
-									}
-								}
-							}
-							if(found == false){//If the name wasn't found on either list, add to visible.
-								MultiSelectBean leftBean = new MultiSelectBean();
-								leftBean.setValue(stuName);
-								leftBean.setLabel(stuName);
-								leftList.add(leftBean);
+						}
+						if(found == false){//If the name wasn't found on either list, add to visible.
+							MultiSelectBean leftBean = new MultiSelectBean();
+							leftBean.setValue(stuName);
+							leftBean.setLabel(stuName.replaceAll("; ",", "));
+							leftList.add(leftBean);
+						}
+						java.util.Collections.sort(leftList);
+					}
+					/*
+					If the cmlist (entire course roster) is smaller than both the hidden and visible lists, then
+					a student must be in the lists that was removed from the class. So this checks if any student has been removed
+					from the course roster since Leaderboard has been uploaded.
+					*/
+					//Check visible list
+					for(int i = 0; i < visibleArr.length; i++){
+						String stuName = visibleArr[i];
+						boolean found = false;
+						for(int j = 0; j < cmlist.size(); j++){//Check entire roster.
+							User student = cmlist.get(j).getUser();
+							String stuName2 = student.getFamilyName() + "; " + student.getGivenName() + " (" + student.getUserName() + ")";
+							if(stuName.equals(stuName2)){
+								found = true;
+								break;
 							}
 						}
-					}// end of check for newly added student
-				//}// end of if a save file already exists
+						if(found == false){//If the name wasn't found on either list, add to visible.
+							MultiSelectBean leftBean = new MultiSelectBean();
+							leftBean.setValue(stuName);
+							leftBean.setLabel(stuName.replaceAll("; ", ", "));
+							leftList.remove(leftBean);
+						}
+						java.util.Collections.sort(leftList);
+					}
+					//Check hidden list
+					for(int i = 0; i < hiddenArr.length; i++){
+						String stuName = hiddenArr[i];
+						boolean found = false;
+						for(int j = 0; j < cmlist.size(); j++){//Check entire roster.
+							User student = cmlist.get(j).getUser();
+							String stuName2 = student.getFamilyName() + "; " + student.getGivenName() + " (" + student.getUserName() + ")";
+							if(stuName.equals(stuName2)){
+								found = true;
+								break;
+							}
+						}
+						if(found == false){//If the name wasn't found on either list, add to visible.
+							MultiSelectBean rightBean = new MultiSelectBean();
+							rightBean.setValue(stuName);
+							rightBean.setLabel(stuName.replaceAll("; ", ", "));
+							rightList.remove(rightBean);
+						}
+						java.util.Collections.sort(rightList);
+					}
+				}// end of if a save file already exists
 				else{//If there isn't a config file saved, set default with everyone visible since lists haven't been created yet.
 					for(int i = 0; i < cmlist.size(); i ++){
 						MultiSelectBean leftBean = new MultiSelectBean();
 						User student = cmlist.get(i).getUser();
-						leftBean.setValue(student.getGivenName() + " " + student.getFamilyName() + ": " + student.getUserName());
-						leftBean.setLabel(student.getGivenName() + " " + student.getFamilyName() + ": " + student.getUserName());
+						leftBean.setValue(student.getFamilyName() + "; " + student.getGivenName() + " (" + student.getUserName() + ")");
+						leftBean.setLabel(student.getFamilyName() + ", " + student.getGivenName() + " (" + student.getUserName() + ")");
 						leftList.add(leftBean);
 					}
+					java.util.Collections.sort(leftList);
 				}
 				
 
@@ -277,6 +326,7 @@
 						<bbNG:colorPicker name="user_color" initialColor="<%= user_color_value %>" helpText="Choose a color for your own bar."/>
 					</bbNG:dataElement>
 				</bbNG:step>
+				
 			<% } %>
 		<bbNG:stepSubmit />
 	</bbNG:dataCollection>

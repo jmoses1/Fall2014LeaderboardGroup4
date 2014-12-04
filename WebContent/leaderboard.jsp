@@ -30,7 +30,6 @@
 <%@page import="com.spvsoftwareproducts.blackboard.utils.B2Context"%>
 <bbNG:includedPage ctxId="ctx">
 <%@include file="leaderboard_student.jsp" %>
-
 	<%
 		// get the current user
 		User sessionUser = ctx.getUser();
@@ -107,10 +106,10 @@
 					*/
 					B2Context b2Context_show_hide = new B2Context(request);
 					String modified = b2Context_show_hide.getSetting(false, true, "modified" + courseID.toExternalString());
-					String sessionUserName = sessionUser.getGivenName() + " " + sessionUser.getFamilyName() + ": " + sessionUser.getUserName();
+					String sessionUserName = sessionUser.getFamilyName() + "; " + sessionUser.getGivenName() + " (" + sessionUser.getUserName() + ")";
 					if(modified.equals("true")){
 						String[] hiddenArr = b2Context_show_hide.getSetting(false, true, "hiddenStudents" + courseID.toExternalString()).split(",");
-						String stuName = cm.getUser().getGivenName() +" " + cm.getUser().getFamilyName() + ": " + cm.getUser().getUserName();
+						String stuName = cm.getUser().getFamilyName() + "; " + cm.getUser().getGivenName() + " (" + cm.getUser().getUserName() + ")";
 						for(int l = 0; l < hiddenArr.length; l++){
 							if(stuName.equals(sessionUserName)){//Only add user if they're the session user.
 								students.add(new Student(cm.getUser().getGivenName(), cm.getUser().getFamilyName(), currScore, cm.getUser().getUserName()));
